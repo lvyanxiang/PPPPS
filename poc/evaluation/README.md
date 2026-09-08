@@ -16,3 +16,7 @@ Git；把本地输入放在 `poc/evaluation/data/`，把运行结果放在 `poc-
 
 完整指标、阈值、硬件和结果格式见
 `docs/development/POC_EVALUATION_PLAN.md`。
+
+M0-02 的 13 个固定点击点在 `m0_02_click_probes.csv`；运行
+`make evaluate-m0-02` 会下载并校验对应图片、执行真实 Mask R-CNN 推理，并把汇总、
+JSON、逐对象 Mask 和轮廓叠加图写入被忽略的 `poc-results/`。

@@ -1,0 +1,15 @@
+probe_id,case_id,image_id,object_type_zh,expected_model_label,normalized_x,normalized_y,difficulty,ground_truth_basis
+M0-02-01,OI-02,021fffa3d66f9b77,人物,person,0.50,0.30,多人和遮挡,Open Images mask 与人工目视确认
+M0-02-02,OI-05,c35ddcc2fa704eec,服装,,0.50,0.50,COCO 80 类不含服装,Open Images mask 与人工目视确认
+M0-02-03,OI-07,f9d2cc52946b9637,猫,cat,0.50,0.50,毛发和大主体,Open Images mask 与人工目视确认
+M0-02-04,OI-08,fb70753a89eeaae2,狗,dog,0.50,0.50,毛发和浅景深,Open Images mask 与人工目视确认
+M0-02-05,OI-09,4b10e6b2dd5cf169,马,horse,0.25,0.45,多对象和遮挡,Open Images mask 与人工目视确认
+M0-02-06,OI-09,4b10e6b2dd5cf169,牛,cow,0.43,0.58,多对象和遮挡,Open Images mask 与人工目视确认
+M0-02-07,OI-11,cf360428e39eff00,鸟,bird,0.50,0.50,细边缘和复杂纹理,Open Images mask 与人工目视确认
+M0-02-08,OI-12,c640424ecb2a3a85,马,horse,0.50,0.50,极近景马脸,Open Images mask 与人工目视确认
+M0-02-09,OI-15,8ff164d554186670,瓶子,bottle,0.71,0.64,小对象和重复货架,Open Images mask 与人工目视确认
+M0-02-10,OI-18,b5cd371d7747c0d0,摩托车,motorcycle,0.58,0.62,拥挤和高遮挡,Open Images mask 与人工目视确认
+M0-02-11,OI-22,7313ab9a917e81a6,瓶子,bottle,0.50,0.50,透明和反射,Open Images mask 与人工目视确认
+M0-02-12,OI-23,ba965d3fd74e1e61,书,book,0.50,0.50,文字和大主体,Open Images mask 与人工目视确认
+M0-02-13,OI-24,b5ddf87dc57c6301,手机,cell phone,0.50,0.50,屏幕反射和大主体,Open Images mask 与人工目视确认
+

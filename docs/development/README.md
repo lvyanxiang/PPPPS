@@ -6,6 +6,7 @@
 - `ROADMAP.md`：从 POC 到完整产品能力的总里程碑及验收门槛。
 - `POC_EVALUATION_PLAN.md`：M0 固定样本、指标、硬件和 Go/No-Go 阈值。
 - `DEPENDENCIES.md`：POC 主要依赖、许可证初步结论、分发边界和回退约束。
+- `M0_02_RESULTS.md`：真实实例分割、对象点击命中率、耗时与失败类型证据。
 
 继续开发时使用项目技能 `$pppps-project`。技能会先读取短状态，再只加载当前
 里程碑和当前任务需要的文件；立项调研仍保留在 `docs/project-initiation/`，用于

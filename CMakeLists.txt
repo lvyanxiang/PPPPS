@@ -12,6 +12,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(PPPPS_FETCH_OPENCV "Fetch a pinned minimal OpenCV when it is not installed" ON)
+set(
+    PPPPS_MASK_RCNN_MODEL
+    "${PROJECT_SOURCE_DIR}/poc/models/MaskRCNN-12-int8.onnx"
+    CACHE FILEPATH
+    "Default Mask R-CNN ONNX model used by the M0 POC"
+)
 
 function(pppps_enable_strict_warnings target)
     if(MSVC)
