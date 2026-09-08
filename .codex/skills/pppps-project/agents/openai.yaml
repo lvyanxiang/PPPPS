@@ -1,0 +1,4 @@
+interface:
+  display_name: "PPPPS Project"
+  short_description: "Resume Qt image-editor milestones and development"
+  default_prompt: "Use $pppps-project to report current progress and continue the next verified milestone task."
