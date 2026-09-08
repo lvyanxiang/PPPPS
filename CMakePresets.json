@@ -1,0 +1,38 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "macos-homebrew-debug",
+      "displayName": "macOS Homebrew Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-homebrew-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/qtbase;/opt/homebrew/opt/onnxruntime",
+        "BUILD_TESTING": "ON",
+        "PPPPS_FETCH_OPENCV": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "macos-homebrew-debug",
+      "configurePreset": "macos-homebrew-debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "macos-homebrew-debug",
+      "configurePreset": "macos-homebrew-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
+
