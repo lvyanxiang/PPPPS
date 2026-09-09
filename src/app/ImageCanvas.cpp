@@ -1,5 +1,7 @@
 #include "ImageCanvas.h"
 
+#include "pppps/matting/AlphaMaskEditor.h"
+
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
@@ -18,6 +20,9 @@ ImageCanvas::ImageCanvas(QWidget *parent)
 void ImageCanvas::clearResult()
 {
     result_ = {};
+    alphaMatte_ = {};
+    alphaBrushMode_ = AlphaBrushMode::Disabled;
+    showAlphaMatte_ = false;
     hoveredIndex_.reset();
     selectedIndex_.reset();
     update();
@@ -26,9 +31,38 @@ void ImageCanvas::clearResult()
 void ImageCanvas::setResult(pppps::segmentation::SegmentationResult result)
 {
     result_ = std::move(result);
+    alphaMatte_ = {};
+    alphaBrushMode_ = AlphaBrushMode::Disabled;
+    showAlphaMatte_ = false;
     hoveredIndex_.reset();
     selectedIndex_.reset();
     update();
+}
+
+void ImageCanvas::setAlphaMatte(QImage alphaMatte)
+{
+    if (alphaMatte.size() != result_.sourceImage.size()) {
+        return;
+    }
+    alphaMatte_ = alphaMatte.convertToFormat(QImage::Format_Grayscale8);
+    showAlphaMatte_ = true;
+    hoveredIndex_.reset();
+    update();
+}
+
+void ImageCanvas::setShowAlphaMatte(const bool show)
+{
+    showAlphaMatte_ = show && !alphaMatte_.isNull();
+    if (!showAlphaMatte_) {
+        alphaBrushMode_ = AlphaBrushMode::Disabled;
+    }
+    update();
+}
+
+void ImageCanvas::setAlphaBrushMode(const AlphaBrushMode mode)
+{
+    alphaBrushMode_ = showAlphaMatte_ ? mode : AlphaBrushMode::Disabled;
+    setCursor(alphaBrushMode_ == AlphaBrushMode::Disabled ? Qt::ArrowCursor : Qt::CrossCursor);
 }
 
 std::optional<int> ImageCanvas::hoveredObjectIndex() const noexcept
@@ -44,6 +78,16 @@ std::optional<int> ImageCanvas::selectedObjectIndex() const noexcept
 const pppps::segmentation::SegmentationResult &ImageCanvas::result() const noexcept
 {
     return result_;
+}
+
+const QImage &ImageCanvas::alphaMatte() const noexcept
+{
+    return alphaMatte_;
+}
+
+bool ImageCanvas::isShowingAlphaMatte() const noexcept
+{
+    return showAlphaMatte_;
 }
 
 QRectF ImageCanvas::imageTargetRect() const
@@ -99,8 +143,18 @@ void ImageCanvas::paintEvent(QPaintEvent *event)
 
     const auto target = imageTargetRect();
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
-    painter.drawImage(target, result_.sourceImage);
+    if (showAlphaMatte_ && !alphaMatte_.isNull()) {
+        paintCheckerboard(painter, target);
+        auto cutout = result_.sourceImage.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+        cutout.setAlphaChannel(alphaMatte_);
+        painter.drawImage(target, cutout);
+    } else {
+        painter.drawImage(target, result_.sourceImage);
+    }
 
+    if (showAlphaMatte_) {
+        return;
+    }
     painter.save();
     painter.translate(target.topLeft());
     const auto scaleX = target.width() / result_.sourceImage.width();
@@ -113,6 +167,26 @@ void ImageCanvas::paintEvent(QPaintEvent *event)
         paintObjectOverlay(painter, *hoveredIndex_, QColor(255, 190, 0));
     }
     painter.restore();
+}
+
+void ImageCanvas::paintCheckerboard(QPainter &painter, const QRectF &target) const
+{
+    constexpr int tileSize = 16;
+    const QColor light(232, 232, 232);
+    const QColor dark(188, 188, 188);
+    const auto left = static_cast<int>(std::floor(target.left()));
+    const auto top = static_cast<int>(std::floor(target.top()));
+    const auto right = static_cast<int>(std::ceil(target.right()));
+    const auto bottom = static_cast<int>(std::ceil(target.bottom()));
+    for (int y = top; y < bottom; y += tileSize) {
+        for (int x = left; x < right; x += tileSize) {
+            const auto darkTile = (((x - left) / tileSize) + ((y - top) / tileSize)) % 2 != 0;
+            painter.fillRect(
+                QRect(x, y, std::min(tileSize, right - x), std::min(tileSize, bottom - y)),
+                darkTile ? dark : light
+            );
+        }
+    }
 }
 
 void ImageCanvas::paintObjectOverlay(
@@ -145,6 +219,9 @@ void ImageCanvas::paintObjectOverlay(
 
 void ImageCanvas::updateHover(const QPointF &widgetPoint)
 {
+    if (showAlphaMatte_) {
+        return;
+    }
     std::optional<int> nextIndex;
     if (const auto imagePoint = mapToImage(widgetPoint)) {
         nextIndex = pppps::segmentation::findObjectAt(result_.objects, *imagePoint);
@@ -157,15 +234,44 @@ void ImageCanvas::updateHover(const QPointF &widgetPoint)
     update();
 }
 
+void ImageCanvas::applyBrushAt(const QPointF &widgetPoint)
+{
+    if (!showAlphaMatte_ || alphaBrushMode_ == AlphaBrushMode::Disabled) {
+        return;
+    }
+    const auto imagePoint = mapToImage(widgetPoint);
+    if (!imagePoint) {
+        return;
+    }
+    constexpr int brushRadius = 24;
+    pppps::matting::applyAlphaBrush(
+        alphaMatte_,
+        *imagePoint,
+        brushRadius,
+        alphaBrushMode_ == AlphaBrushMode::Restore ? 255 : 0
+    );
+    emit alphaMatteEdited();
+    update();
+}
+
 void ImageCanvas::mouseMoveEvent(QMouseEvent *event)
 {
-    updateHover(event->position());
+    if ((event->buttons() & Qt::LeftButton) != 0) {
+        applyBrushAt(event->position());
+    } else {
+        updateHover(event->position());
+    }
     QWidget::mouseMoveEvent(event);
 }
 
 void ImageCanvas::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
+        if (showAlphaMatte_ && alphaBrushMode_ != AlphaBrushMode::Disabled) {
+            applyBrushAt(event->position());
+            QWidget::mousePressEvent(event);
+            return;
+        }
         updateHover(event->position());
         if (selectedIndex_ != hoveredIndex_) {
             selectedIndex_ = hoveredIndex_;

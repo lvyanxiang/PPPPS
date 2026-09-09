@@ -1,0 +1,6 @@
+case_id,evaluation_area,mask_label,model_scope,expected_observation
+P3M-DEMO-01,人物头发,person,in_scope,连续 Alpha 应保留部分发丝和软边
+OI-02,婚纱与半透明服装边缘,person,in_scope,人物可分离但白色羽毛和服装细节需要人工检查
+OI-07,猫毛发,cat,out_of_scope,人物专用 MODNet 不应被当作动物抠图方案
+OI-08,狗毛发,dog,out_of_scope,人物专用 MODNet 不应被当作动物抠图方案
+OI-22,透明反光瓶,bottle,out_of_scope,人物专用 MODNet 不应被当作透明物体抠图方案

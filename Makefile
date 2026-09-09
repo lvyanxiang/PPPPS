@@ -10,12 +10,18 @@ MODEL_DIR := $(PROJECT_ROOT)/poc/models
 MODEL_PATH := $(MODEL_DIR)/MaskRCNN-12-int8.onnx
 MODEL_URL := https://huggingface.co/onnxmodelzoo/MaskRCNN-12-int8/resolve/main/MaskRCNN-12-int8.onnx
 MODEL_SHA256 := 4409935e855719fd6cd986f7ec2a3de840d0bd9c9cf7a0cba84ce95377f5b476
+MODNET_MODEL_PATH := $(MODEL_DIR)/modnet_photographic_portrait_matting.onnx
+MODNET_MODEL_URL := https://drive.usercontent.google.com/download?id=1cgycTQlYXpTh26gB9FTnthE7AvruV8hd&export=download&confirm=t
+MODNET_MODEL_SHA256 := 07c308cf0fc7e6e8b2065a12ed7fc07e1de8febb7dc7839d7b7f15dd66584df9
 POC_DATA_DIR := $(PROJECT_ROOT)/poc/evaluation/data
 POC_IMAGE_PATH := $(POC_DATA_DIR)/OI-07.jpg
 POC_IMAGE_URL := https://s3.amazonaws.com/open-images-dataset/validation/f9d2cc52946b9637.jpg
 POC_IMAGE_SHA256 := 36f8e3668261cce538133e10aecb3f7afe4714be6500d741f4b04035b1789f5b
+MATTING_IMAGE_PATH := $(POC_DATA_DIR)/OI-02.jpg
+MATTING_IMAGE_URL := https://s3.amazonaws.com/open-images-dataset/validation/021fffa3d66f9b77.jpg
+MATTING_IMAGE_SHA256 := b7a15375ab3576035f61d826d238f1bf84e211cf687c1c7170f06fa00e17d935
 
-.PHONY: help doctor check-platform check-xcode check-brew bootstrap models poc-data configure build test run evaluate-m0-02
+.PHONY: help doctor check-platform check-xcode check-brew bootstrap models poc-data configure build test run evaluate-m0-02 evaluate-m0-03
 
 help:
 	@echo "PPPPS macOS 开发命令"
@@ -26,6 +32,7 @@ help:
 	@echo "  make test       构建并运行单元、界面和真实模型测试"
 	@echo "  make run        构建并启动 PPPPS.app"
 	@echo "  make evaluate-m0-02  导出一次真实推理的 JSON、Mask 和叠加图"
+	@echo "  make evaluate-m0-03  对比人物二值 Mask 与连续 Alpha，并导出边界样例"
 
 check-platform:
 	@if [[ "$$(uname -s)" != "Darwin" ]]; then \
@@ -101,6 +108,25 @@ models:
 		fi; \
 		mv "$$temporary" "$(MODEL_PATH)"; \
 		echo "✓ 模型下载与 SHA-256 校验完成"; \
+	fi; \
+	actual=""; \
+	if [[ -f "$(MODNET_MODEL_PATH)" ]]; then \
+		actual="$$(shasum -a 256 "$(MODNET_MODEL_PATH)" | awk '{print $$1}')"; \
+	fi; \
+	if [[ "$$actual" == "$(MODNET_MODEL_SHA256)" ]]; then \
+		echo "✓ MODNet 人物抠图模型已下载且校验通过"; \
+	else \
+		temporary="$(MODNET_MODEL_PATH).download"; \
+		echo "→ 下载 MODNet 官方 ONNX 人物抠图模型（约 26 MB）"; \
+		curl --fail --location --retry 3 --output "$$temporary" "$(MODNET_MODEL_URL)"; \
+		actual="$$(shasum -a 256 "$$temporary" | awk '{print $$1}')"; \
+		if [[ "$$actual" != "$(MODNET_MODEL_SHA256)" ]]; then \
+			echo "错误：MODNet 模型 SHA-256 校验失败，实际为 $$actual"; \
+			rm -f "$$temporary"; \
+			exit 1; \
+		fi; \
+		mv "$$temporary" "$(MODNET_MODEL_PATH)"; \
+		echo "✓ MODNet 下载与 SHA-256 校验完成"; \
 	fi
 
 poc-data:
@@ -123,6 +149,25 @@ poc-data:
 		fi; \
 		mv "$$temporary" "$(POC_IMAGE_PATH)"; \
 		echo "✓ OI-07 下载与 SHA-256 校验完成"; \
+	fi; \
+	actual=""; \
+	if [[ -f "$(MATTING_IMAGE_PATH)" ]]; then \
+		actual="$$(shasum -a 256 "$(MATTING_IMAGE_PATH)" | awk '{print $$1}')"; \
+	fi; \
+	if [[ "$$actual" == "$(MATTING_IMAGE_SHA256)" ]]; then \
+		echo "✓ OI-02 人物/婚纱测试图片已校验"; \
+	else \
+		temporary="$(MATTING_IMAGE_PATH).download"; \
+		echo "→ 下载 Open Images OI-02 人物/婚纱测试图片"; \
+		curl --fail --location --retry 3 --output "$$temporary" "$(MATTING_IMAGE_URL)"; \
+		actual="$$(shasum -a 256 "$$temporary" | awk '{print $$1}')"; \
+		if [[ "$$actual" != "$(MATTING_IMAGE_SHA256)" ]]; then \
+			echo "错误：OI-02 SHA-256 校验失败，实际为 $$actual"; \
+			rm -f "$$temporary"; \
+			exit 1; \
+		fi; \
+		mv "$$temporary" "$(MATTING_IMAGE_PATH)"; \
+		echo "✓ OI-02 下载与 SHA-256 校验完成"; \
 	fi
 
 configure: bootstrap models poc-data
@@ -130,7 +175,8 @@ configure: bootstrap models poc-data
 	ort_prefix="$$(brew --prefix onnxruntime)"; \
 	cmake --preset "$(PRESET)" \
 		-DCMAKE_PREFIX_PATH="$$qt_prefix;$$ort_prefix" \
-		-DPPPPS_MASK_RCNN_MODEL="$(MODEL_PATH)"
+		-DPPPPS_MASK_RCNN_MODEL="$(MODEL_PATH)" \
+		-DPPPPS_MODNET_MODEL="$(MODNET_MODEL_PATH)"
 
 build: configure
 	@cmake --build --preset "$(PRESET)" --parallel
@@ -147,3 +193,6 @@ run: build
 
 evaluate-m0-02: test
 	@bash "$(PROJECT_ROOT)/scripts/evaluate_m0_02.sh" "$(MODEL_PATH)"
+
+evaluate-m0-03: test
+	@bash "$(PROJECT_ROOT)/scripts/evaluate_m0_03.sh" "$(MODEL_PATH)" "$(MODNET_MODEL_PATH)"

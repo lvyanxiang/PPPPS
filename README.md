@@ -12,8 +12,8 @@ xcode-select --install
 ```
 
 之后使用统一入口；`make build` 会检查 `cmake`、`qtbase`、`onnxruntime`、
-`ninja`、`pkgconf`，缺失时自动通过 Homebrew 安装；还会下载并校验约 46 MB 的
-Mask R-CNN POC 模型，再配置并构建工程：
+`ninja`、`pkgconf`，缺失时自动通过 Homebrew 安装；还会下载并校验 Mask R-CNN 与
+MODNet 两个 POC 模型（合计约 72 MB），再配置并构建工程：
 
 ```bash
 make build      # 检查/安装依赖并构建
@@ -22,6 +22,7 @@ make run        # 构建并启动 PPPPS.app
 make doctor     # 只检查环境，不安装
 make models     # 只准备并校验模型
 make evaluate-m0-02  # 导出一次真实推理的 JSON、Mask 和叠加图
+make evaluate-m0-03  # 对比人物二值 Mask 与连续 Alpha，并导出边界样例
 ```
 
 如果系统已有 OpenCV 4，可通过 `CMAKE_PREFIX_PATH` 使用它；否则预设会下载固定
@@ -29,8 +30,10 @@ make evaluate-m0-02  # 导出一次真实推理的 JSON、Mask 和叠加图
 `poc/models/`，测试图片位于 `poc/evaluation/data/`；这些下载内容都不会进入 Git。
 
 当前桌面 POC 已支持真实的“打开图片 → 自动识别对象 → 悬停高亮轮廓 → 点击获得
-Mask”。模型只覆盖 COCO 80 类，实际命中率和已知失败见
-[`docs/development/M0_02_RESULTS.md`](docs/development/M0_02_RESULTS.md)。
+Mask”，也可运行本地人物精细抠图、在棋盘格上查看连续 Alpha，并用画笔补回/擦除。
+对象命中证据见 [`docs/development/M0_02_RESULTS.md`](docs/development/M0_02_RESULTS.md)，
+Matting 的通过项和失败边界见
+[`docs/development/M0_03_RESULTS.md`](docs/development/M0_03_RESULTS.md)。
 
 项目进度以 [`docs/development/STATUS.md`](docs/development/STATUS.md) 和
 [`docs/development/ROADMAP.md`](docs/development/ROADMAP.md) 为准。

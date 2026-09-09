@@ -18,6 +18,12 @@ set(
     CACHE FILEPATH
     "Default Mask R-CNN ONNX model used by the M0 POC"
 )
+set(
+    PPPPS_MODNET_MODEL
+    "${PROJECT_SOURCE_DIR}/poc/models/modnet_photographic_portrait_matting.onnx"
+    CACHE FILEPATH
+    "Default MODNet ONNX model used by the M0 POC"
+)
 
 function(pppps_enable_strict_warnings target)
     if(MSVC)

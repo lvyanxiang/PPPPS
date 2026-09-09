@@ -37,6 +37,20 @@ add_test(NAME pppps_segmentation_types_tests COMMAND pppps_segmentation_types_te
 set_tests_properties(pppps_segmentation_types_tests PROPERTIES TIMEOUT 10)
 
 qt_add_executable(
+    pppps_matting_types_tests
+    tst_MattingTypes.cpp
+)
+target_link_libraries(
+    pppps_matting_types_tests
+    PRIVATE
+        pppps_poc_core
+        Qt6::Test
+)
+pppps_enable_strict_warnings(pppps_matting_types_tests)
+add_test(NAME pppps_matting_types_tests COMMAND pppps_matting_types_tests)
+set_tests_properties(pppps_matting_types_tests PROPERTIES TIMEOUT 10)
+
+qt_add_executable(
     pppps_image_canvas_tests
     tst_ImageCanvas.cpp
     ${PROJECT_SOURCE_DIR}/src/app/ImageCanvas.cpp
@@ -75,4 +89,20 @@ if(EXISTS "${PPPPS_MASK_RCNN_MODEL}" AND EXISTS "${PPPPS_REAL_MODEL_TEST_IMAGE}"
     set_tests_properties(pppps_real_mask_rcnn PROPERTIES LABELS "real-model" TIMEOUT 180)
 else()
     message(STATUS "Real Mask R-CNN test skipped until make models and make poc-data have run")
+endif()
+
+set(PPPPS_REAL_MATTING_TEST_IMAGE "${PROJECT_SOURCE_DIR}/poc/evaluation/data/OI-02.jpg")
+if(EXISTS "${PPPPS_MODNET_MODEL}" AND EXISTS "${PPPPS_REAL_MATTING_TEST_IMAGE}")
+    add_test(
+        NAME pppps_real_modnet
+        COMMAND
+            pppps_matting_probe
+            --model "${PPPPS_MODNET_MODEL}"
+            --image "${PPPPS_REAL_MATTING_TEST_IMAGE}"
+            --expect-min-soft-pixels 100
+            --output-dir "${CMAKE_BINARY_DIR}/poc-results/OI-02-modnet"
+    )
+    set_tests_properties(pppps_real_modnet PROPERTIES LABELS "real-model" TIMEOUT 180)
+else()
+    message(STATUS "Real MODNet test skipped until make models and make poc-data have run")
 endif()

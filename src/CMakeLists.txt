@@ -3,6 +3,10 @@ qt_add_library(
     core/PocPipeline.cpp
     core/PocTaskController.cpp
     core/MaskRcnnEngine.cpp
+    core/ModnetEngine.cpp
+    core/MattingTaskController.cpp
+    core/MattingTypes.cpp
+    core/AlphaMaskEditor.cpp
     core/SegmentationTaskController.cpp
     core/SegmentationTypes.cpp
     include/pppps/poc/PocPipeline.h
@@ -10,6 +14,10 @@ qt_add_library(
     include/pppps/segmentation/MaskRcnnEngine.h
     include/pppps/segmentation/SegmentationTaskController.h
     include/pppps/segmentation/SegmentationTypes.h
+    include/pppps/matting/ModnetEngine.h
+    include/pppps/matting/MattingTaskController.h
+    include/pppps/matting/MattingTypes.h
+    include/pppps/matting/AlphaMaskEditor.h
 )
 
 target_include_directories(
@@ -57,6 +65,7 @@ target_compile_definitions(
     PPPPS
     PRIVATE
         PPPPS_DEFAULT_MODEL_PATH="${PPPPS_MASK_RCNN_MODEL}"
+        PPPPS_DEFAULT_MODNET_MODEL_PATH="${PPPPS_MODNET_MODEL}"
 )
 
 qt_add_executable(
@@ -70,6 +79,18 @@ target_link_libraries(
         Qt6::Gui
 )
 pppps_enable_strict_warnings(pppps_segmentation_probe)
+
+qt_add_executable(
+    pppps_matting_probe
+    tools/MattingProbe.cpp
+)
+target_link_libraries(
+    pppps_matting_probe
+    PRIVATE
+        pppps_poc_core
+        Qt6::Gui
+)
+pppps_enable_strict_warnings(pppps_matting_probe)
 
 set_target_properties(
     PPPPS

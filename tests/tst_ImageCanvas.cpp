@@ -43,6 +43,7 @@ class ImageCanvasTest final : public QObject {
 
 private slots:
     void hoverHighlightsAndClickSelectsMask();
+    void alphaBrushRepairsAndErasesMatte();
 };
 
 void ImageCanvasTest::hoverHighlightsAndClickSelectsMask()
@@ -71,7 +72,30 @@ void ImageCanvasTest::hoverHighlightsAndClickSelectsMask()
     QCOMPARE(hovered.constLast().constFirst().toInt(), -1);
 }
 
+void ImageCanvasTest::alphaBrushRepairsAndErasesMatte()
+{
+    ImageCanvas canvas;
+    canvas.resize(520, 360);
+    canvas.setResult(sampleResult());
+    QImage alpha(100, 100, QImage::Format_Grayscale8);
+    alpha.fill(0);
+    canvas.setAlphaMatte(alpha);
+    canvas.show();
+    QCoreApplication::processEvents();
+
+    QSignalSpy edited(&canvas, &ImageCanvas::alphaMatteEdited);
+    canvas.setAlphaBrushMode(ImageCanvas::AlphaBrushMode::Restore);
+    QTest::mouseClick(&canvas, Qt::LeftButton, Qt::NoModifier, QPoint(260, 180));
+    QTRY_COMPARE(edited.count(), 1);
+    QCOMPARE(canvas.alphaMatte().pixelColor(50, 50).value(), 255);
+
+    canvas.setAlphaBrushMode(ImageCanvas::AlphaBrushMode::Erase);
+    QTest::mouseClick(&canvas, Qt::LeftButton, Qt::NoModifier, QPoint(260, 180));
+    QTRY_COMPARE(edited.count(), 2);
+    QCOMPARE(canvas.alphaMatte().pixelColor(50, 50).value(), 0);
+    QVERIFY(!canvas.selectedObjectIndex().has_value());
+}
+
 QTEST_MAIN(ImageCanvasTest)
 
 #include "tst_ImageCanvas.moc"
-
